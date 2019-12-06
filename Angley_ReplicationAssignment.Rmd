@@ -1,0 +1,35 @@
+---
+title: "Replication Assignment"
+output: html_document
+---
+
+library(curl)
+
+# Importing my data!
+```{r}
+WTA_reviews<- curl("https://raw.githubusercontent.com/langley1/AN597_Replication_Assignment/master/WTA_Reviews.csv")
+WTA_reviews<- read.csv(WTA_reviews, header = T, sep = ",")
+head(WTA_reviews) 
+str(WTA_reviews) 
+WTA_reviews$Type <- as.character(WTA_reviews$Type)
+```
+
+# Finding the average tourist dissatisfaction score across the WTA types
+```{r}
+DS_mean<- mean(WTA_reviews$Percentage, na.rm = T)
+DS_mean
+```
+
+```{r}
+library(ggplot2)
+
+q<- qplot(Type,Percentage, data=WTA_reviews, geom="boxplot", xlab= "WTA Type", ylab = "Tourist Dissatisfaction Score (% negative reviews)") 
+q<- q + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) #putting the x labels on an angle
+q<- q + geom_boxplot(outlier.shape = 8) #changing the shape of the outlier points to asterisks
+q
+
+
+
+
+```
+
