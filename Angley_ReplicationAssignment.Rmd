@@ -3,25 +3,74 @@ title: "Replication Assignment"
 output: html_document
 ---
 
-library(curl)
+I will replicate 1) finding the average tourist dissatisfaction score (DS) across all of the WTA types, 2) an ANOVA to see if tourist dissatisfaction scores differed across the various subject taxa 3) the Tukey Post Hoc to see which taxa differed in their dissatisfaction scores and 4) Figure 3, which shows tourist dissatisfaction scores from TripAdvisor reviews (measured as the percentage of all positive and negative reviews that were negative). 
 
-# Importing my data!
+```{r}
+library(curl)
+library(ggplot2)
+```
+
+## Importing my data!
 ```{r}
 WTA_reviews<- curl("https://raw.githubusercontent.com/langley1/AN597_Replication_Assignment/master/WTA_Reviews.csv")
 WTA_reviews<- read.csv(WTA_reviews, header = T, sep = ",")
 head(WTA_reviews) 
 str(WTA_reviews) 
-WTA_reviews$Type <- as.character(WTA_reviews$Type)
+WTA_reviews$Type <- as.character(WTA_reviews$Type) #This is turning the "Type" category into characters rather than factors
 ```
 
-# Finding the average tourist dissatisfaction score across the WTA types
+# Replication 1
+
+Finding the average tourist dissatisfaction score (DS) across the WTA types
 ```{r}
 DS_mean<- mean(WTA_reviews$Percentage, na.rm = T)
 DS_mean
 ```
 
+# Replication 2
+
+Doing an ANOVA to see if tourist dissatisfaction scores differed across the various subject taxa
+```{r}
+DS_score<- WTA_reviews$Percentage #creating a new object for the dissatisfaction score
+Taxa<- WTA_reviews$Search.term #creating a new object for the subject taxa
+
+Anova<- aov(DS_score~Taxa) #running the anova
+summary(Anova)
+```
+
+# Replication 3
+
+Running the Tukey Post Hoc Test to see which taxa differed significantly in their dissatisfaction scores
+```{r}
+posthoc<- TukeyHSD(Anova, "Taxa", conf.level = 0.95)
+posthoc
+```
+
+
+
+```{r}
+non_sanct<- subset(WTA_reviews, Category != "Sanctuary") #creating a new object that only contains the rows that are NOT sanctuaries
+non_sanct
+str(non_sanct)
+
+
+sanct<- subset(WTA_reviews, Category == "Sanctuary") #creating a new object that is only Sanctuaries
+sanct
+
+lm1<- lm(DS_score ~ non_sanct$Category + sanct$Category)
+
+```
+
+
+
+
+
+# Replication 4
+
+Re-creating the Figure
 ```{r}
 library(ggplot2)
+library(dply)
 
 q<- qplot(Type,Percentage, data=WTA_reviews, geom="boxplot", xlab= "WTA Type", ylab = "Tourist Dissatisfaction Score (% negative reviews)") 
 q<- q + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) #putting the x labels on an angle
@@ -29,7 +78,25 @@ q<- q + geom_boxplot(outlier.shape = 8) #changing the shape of the outlier point
 q
 
 
+q<- qplot(Type,Percentage, data=WTA_reviews, geom="boxplot", xlab= "WTA Type", ylab = "Tourist Dissatisfaction Score (% negative reviews)") 
+q<- q + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) #putting the x labels on an angle
+q<- q + geom_boxplot(outlier.shape = 8) #changing the shape of the outlier points to asterisks
+q
+
+myboxplot <- ddply(mtcars,
+                    .(cyl),
+                    summarise,
+                    min = min(mpg),
+                    q1 = quantile(mpg,0.25),
+                    med = median(mpg),
+                    q3 = quantile(mpg,0.75),
+                    max= max(mpg),
+                    lab = length(cyl))
+ggplot(myboxplot, aes(x = factor(cyl))) + 
+    geom_boxplot(aes(lower = q1, upper = q3, middle = med, ymin = min, ymax = max), stat = "identity") + 
+    geom_text(aes(y = max,label = lab),vjust = 0)
 
 
 ```
+
 
