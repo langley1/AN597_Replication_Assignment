@@ -3,31 +3,54 @@ title: "Replication Assignment"
 output: html_document
 ---
 
-I will replicate 1) finding the average tourist dissatisfaction score (DS) across all of the WTA types, 2) an ANOVA to see if tourist dissatisfaction scores differed across the various subject taxa 3) the Tukey Post Hoc to see which taxa differed in their dissatisfaction scores and 4) Figure 3, which shows tourist dissatisfaction scores from TripAdvisor reviews (measured as the percentage of all positive and negative reviews that were negative). 
+***
+
+## The Customer Isn't Always Right— Conservation and Animal Welfare Implications of the Increasing Demand for Wildlife Tourism
+
+### Moorhouse *et al.* (2015)
+
+***
+
+This study focuses on the diversity of Wildlife Tourist Attractions (WTAs) across the globe and how they impact the conservation and welfare of the animals involved. They also aimed to understand tourists' perceptions of WTAs through an objective assessment of their impacts to focus on areas where tourist education may be helpful. Overall, this paper presents an examination of non-consumptive (no fishing/hunting), & non-zoo WTAs worldwide that fell into 5 categories: "Captive Interactions", "Sanctuary attractions", "Farmed Wildlife", "Street Performances", and "Wild attractions". In each category, they assigned a conservation and welfare score based on a number of criteria and analyized the feedback reviews from tourists on TripAdvisor. Ultimatley, they compared the tourist reviews with the corresponding conservation and welfare scores in order to examine tourists' assessments of various WTAs.
+
+```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE, warning = FALSE, comment = "##", prompt = TRUE, 
+#+     tidy = TRUE, tidy.opts = list(width.cutoff = 75), fig.path = "img/")
+```
+
+
 
 ```{r}
 library(curl)
 library(ggplot2)
 ```
 
-## Importing my data!
+### Importing my data!
+
 ```{r}
-WTA_reviews<- curl("https://raw.githubusercontent.com/langley1/AN597_Replication_Assignment/master/WTA_Reviews.csv")
+WTA_reviews<- curl("https://raw.githubusercontent.com/langley1/AN597_Replication_Assignment/master/WTA_Reviews.csv") # I saved their original excel datasheet as a csv, uploaded to my repo, and am pulling it in here using curl
 WTA_reviews<- read.csv(WTA_reviews, header = T, sep = ",")
 head(WTA_reviews) 
-str(WTA_reviews) 
-WTA_reviews$Type <- as.character(WTA_reviews$Type) #This is turning the "Type" category into characters rather than factors
 ```
+The original dataset has all of the subject taxa, the type/category of each WTA, and all of the reviews collected from Trip Advisor
 
-# Replication 1
+For this assignment, I will replicate 1) finding the average tourist dissatisfaction score (DS) across all of the WTA types, 2) an ANOVA to see if tourist dissatisfaction scores differed across the various subject taxa 3) the Tukey Post Hoc to see which taxa differed in their dissatisfaction scores and 4) Figure 3, which shows tourist dissatisfaction scores from TripAdvisor reviews (measured as the percentage of all positive and negative reviews that were negative). 
+
+### Replication 1
 
 Finding the average tourist dissatisfaction score (DS) across the WTA types
 ```{r}
-DS_mean<- mean(WTA_reviews$Percentage, na.rm = T)
+DS_mean<- mean(WTA_reviews$Percentage, na.rm = T) #The "Percentage" column in the dataset is the tourist dissatisfaction scores measured as the percentage of all reviews— discounting ‘average’ reviews— accounted for by negative reviews (i.e. 100 x (negatives /(positives + negatives))), where a low percentage indicates that few tourists had a negative perception of the attraction
 DS_mean
-```
 
-# Replication 2
+DS_SD<- sd(WTA_reviews$Percentage, na.rm = T)
+DS_SD
+```
+**Report from Results Section**: "The mean tourist dissatisfaction score was 7.8% (SD 14.7) across all WTAs."
+
+> I get the same results for tourist DS mean and standard deviation in my analyses. 
+
+### Replication 2
 
 Doing an ANOVA to see if tourist dissatisfaction scores differed across the various subject taxa
 ```{r}
@@ -37,66 +60,72 @@ Taxa<- WTA_reviews$Search.term #creating a new object for the subject taxa
 Anova<- aov(DS_score~Taxa) #running the anova
 summary(Anova)
 ```
+**Report from Results Section**: "Tourist dissatisfaction scores varied between subject taxa (F(10,187) = 4.36, p < 0.001; Fig 3)"
 
-# Replication 3
+> My F value is ever so slightly off (4.36 vs. 4.74). I'm not sure why they are coming out different. However, I still get a p value < 0.001, which shows the tourist dissatisfaction scores do vary significantly between subject taxa
+
+### Replication 3
 
 Running the Tukey Post Hoc Test to see which taxa differed significantly in their dissatisfaction scores
 ```{r}
 posthoc<- TukeyHSD(Anova, "Taxa", conf.level = 0.95)
-posthoc
+head(posthoc)
+```
+*Report from Results Section*: "Tukey post-hoc tests for effects of subject taxon revealed that dolphins had significantly lower mean tourist dissatisfaction scores than crocodiles and elephants (T = 5.090, p < 0.001; T = 4.1062, p < 0.05, respectively) and that sharks had lower scores than crocodiles (T = 5.887, p < 0.001), all other comparisons being non-sig- nificant (T < 3.2, p > 0.05 in all cases; c.f. Fig 3). 
+
+I selected out the relevant comparisons and put them into a table for easier view: 
+```{r}
+pairs<- c("Dolphin-Crocodile", "Elephant-Dolphin", "Shark-Crocodile")
+diff<- c(-21.473,8.808,-23.892)
+lwr<- c(-34.306,1.146,-40.162)
+upr<- c(-8.639,16.470,-7.622)
+p_adj<- c(0.0000087,0.0106121,0.0001825)
+posthoc_tab<- data.frame(pairs=pairs, diff=diff, lwr=lwr, upr=upr, p_adj=p_adj)
+posthoc_tab
 ```
 
+> Here we can see that these three pairs of comparisons do in fact have significant p values. Since the difference between dolphins (1st) and crocodiles (2nd) is a negative number, we can tell that dolphins do have a significantly lower mean tourist DS as stated above. Since the difference between elephants (1st) and dolphins (2nd) is a positive number, we can tell that dolphins also have a significantly lower mean tourist DS. Lastly, since the difference between sharks (1st) and crocs (2nd) is negative, we can tell that sharks have a lower mean tourist DS score. My only struggle with this analysis is the reported T value in the paper. I'm not sure where they got this value from or how they calcualted it from a Tukey Post Hoc Test. 
 
+### Replication 4
 
+Re-creating Figure 3. 
 ```{r}
-non_sanct<- subset(WTA_reviews, Category != "Sanctuary") #creating a new object that only contains the rows that are NOT sanctuaries
-non_sanct
-str(non_sanct)
-
-
-sanct<- subset(WTA_reviews, Category == "Sanctuary") #creating a new object that is only Sanctuaries
-sanct
-
-lm1<- lm(DS_score ~ non_sanct$Category + sanct$Category)
-
-```
-
-
-
-
-
-# Replication 4
-
-Re-creating the Figure
-```{r}
-library(ggplot2)
-library(dply)
+WTA_reviews$Type <- as.character(WTA_reviews$Type) #This is turning the "Type" category into characters rather than factors
 
 q<- qplot(Type,Percentage, data=WTA_reviews, geom="boxplot", xlab= "WTA Type", ylab = "Tourist Dissatisfaction Score (% negative reviews)") 
 q<- q + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) #putting the x labels on an angle
 q<- q + geom_boxplot(outlier.shape = 8) #changing the shape of the outlier points to asterisks
+q<- q + annotate("text", x = 1, y = 10, label = "-1 -3", size=3) #I'm using annotate() to manually add in the conservation and welfare scores onto the plot, not sure if this is the most efficient way since I have to do it for every single WTA type
+q<- q + annotate("text", x = 2, y = 7, label = "+1 +2", size=3)
+q<- q + annotate("text", x = 3, y = 25, label = "-1 -3", size=3)
+q<- q + annotate("text", x = 4, y = 70, label = "-2 -3", size=3)
+q<- q + annotate("text", x = 5, y = 50, label = "-1 -2", size=3)
+q<- q + annotate("text", x = 6, y = 20, label = "-2 -2", size=3)
+q<- q + annotate("text", x = 7, y = 42, label = "-2 -2", size=3)
+q<- q + annotate("text", x = 8, y = 7, label = "+1 +2", size=3)
+q<- q + annotate("text", x = 9, y = 7, label = "+3 -1", size=3)
+q<- q + annotate("text", x = 10, y = 12, label = "+1 -1", size=3)
+q<- q + annotate("text", x = 11, y = 7, label = "+1 +2", size=3)
+q<- q + annotate("text", x = 12, y = 10, label = "+3 +2", size=3)
+q<- q + annotate("text", x = 13, y = 7, label = "-2 -2", size=3)
+q<- q + annotate("text", x = 14, y = 33, label = "-1 -3", size=3)
+q<- q + annotate("text", x = 15, y = 48, label = "+1 -3", size=3)
 q
-
-
-q<- qplot(Type,Percentage, data=WTA_reviews, geom="boxplot", xlab= "WTA Type", ylab = "Tourist Dissatisfaction Score (% negative reviews)") 
-q<- q + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) #putting the x labels on an angle
-q<- q + geom_boxplot(outlier.shape = 8) #changing the shape of the outlier points to asterisks
-q
-
-myboxplot <- ddply(mtcars,
-                    .(cyl),
-                    summarise,
-                    min = min(mpg),
-                    q1 = quantile(mpg,0.25),
-                    med = median(mpg),
-                    q3 = quantile(mpg,0.75),
-                    max= max(mpg),
-                    lab = length(cyl))
-ggplot(myboxplot, aes(x = factor(cyl))) + 
-    geom_boxplot(aes(lower = q1, upper = q3, middle = med, ymin = min, ymax = max), stat = "identity") + 
-    geom_text(aes(y = max,label = lab),vjust = 0)
-
-
 ```
 
+Figure 3. **Tourist dissatisfaction scores from TripAdvisor reviews (measured as the percentage of all positive and negative reviews that were negative)**. Bars represent the median, boxes the interquartile range, and asterisks outlying points. Numbers above each column, for reference, show the independently awarded conservation and welfare scores, respectively, for each attraction. “C” and “W” denote captive and wild dolphin interactions.
 
+**Image from paper**
+```{r}
+#![Figure from Paper.](/img/WTA_Paper_Fig3.png)
+
+
+#<img src="img/WTA_Paper_Fig3.filetype" width="200px"/>
+```
+
+###### <img src= "/img/WTA_Paper_Fig3.png." width="200px"/>
+
+
+```{r pressure, echo=FALSE, fig.cap="Figure 3", out.width = '100%'}
+knitr::include_graphics('/langley/AN597_Replication_Assignment/img/WTA_Paper_Fig3.png')
+```
