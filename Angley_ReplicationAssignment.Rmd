@@ -11,14 +11,22 @@ output: html_document
 
 ***
 
-This study focuses on the diversity of Wildlife Tourist Attractions (WTAs) across the globe and how they impact the conservation and welfare of the animals involved. They also aimed to understand tourists' perceptions of WTAs through an objective assessment of their impacts to focus on areas where tourist education may be helpful. Overall, this paper presents an examination of non-consumptive (no fishing/hunting), & non-zoo WTAs worldwide that fell into 5 categories: "Captive Interactions", "Sanctuary attractions", "Farmed Wildlife", "Street Performances", and "Wild attractions". In each category, they assigned a conservation and welfare score based on a number of criteria and analyized the feedback reviews from tourists on TripAdvisor. Ultimatley, they compared the tourist reviews with the corresponding conservation and welfare scores in order to examine tourists' assessments of various WTAs.
+### Introduction 
+
+  This study focuses on the diversity of Wildlife Tourist Attractions (WTAs) across the globe and how they impact the conservation and welfare of the animals involved. They also aimed to understand tourists' perceptions of WTAs through an objective assessment of their impacts to focus on areas where tourist education may be helpful. Overall, this paper presents an examination of non-consumptive (no fishing/hunting), & non-zoo WTAs worldwide that fall into 5 categories: "Captive Interactions", "Sanctuary attractions", "Farmed Wildlife", "Street Performances", and "Wild attractions". In each category, they assigned a conservation and welfare score (+1 to +3 for positive impacts, -1 to -3 for negative impacts, and 0 for no impact) based on a number of criteria such as, direct conservation benefits the WTA provides to the species and if the WTA fulfulls the 5 animal welfare freedoms (see Fig 1 and 2 below). They also analyzed the feedback reviews from tourists on TripAdvisor. Ultimatley, they compared the tourist reviews with the corresponding conservation and welfare scores in order to examine tourists' assessments of various WTAs.
+
+![**Bear Dancing**](/Users/lauraangley/Documents/GitHub/AN597_Replication_Assignment/img/Bear Dancing.png)
+
+![**Civet Coffee Farm**](/Users/lauraangley/Documents/GitHub/AN597_Replication_Assignment/img/Civet Farm.png)
+
+![**Tiger Cub Encounter**](/Users/lauraangley/Documents/GitHub/AN597_Replication_Assignment/img/Tiger_Encounter.png)
+
+![**Elephant Sanctuary**](/Users/lauraangley/Documents/GitHub/AN597_Replication_Assignment/img/Ele Sanct.png)
 
 ```{r setup, include=FALSE}
-#knitr::opts_chunk$set(echo = TRUE, warning = FALSE, comment = "##", prompt = TRUE, 
-#+     tidy = TRUE, tidy.opts = list(width.cutoff = 75), fig.path = "img/")
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, comment = "##", prompt = TRUE, 
+     tidy = TRUE, tidy.opts = list(width.cutoff = 75), fig.path = "img/")
 ```
-
-
 
 ```{r}
 library(curl)
@@ -34,13 +42,25 @@ head(WTA_reviews)
 ```
 The original dataset has all of the subject taxa, the type/category of each WTA, and all of the reviews collected from Trip Advisor
 
-For this assignment, I will replicate 1) finding the average tourist dissatisfaction score (DS) across all of the WTA types, 2) an ANOVA to see if tourist dissatisfaction scores differed across the various subject taxa 3) the Tukey Post Hoc to see which taxa differed in their dissatisfaction scores and 4) Figure 3, which shows tourist dissatisfaction scores from TripAdvisor reviews (measured as the percentage of all positive and negative reviews that were negative). 
+
+### Conservation and Welfare Score Flowcharts
+
+![Fig 1. Conservation Scores](/Users/lauraangley/Documents/GitHub/AN597_Replication_Assignment/img/WTA_Cons.png)
+
+
+![Fig 2. Welfare Scores](/Users/lauraangley/Documents/GitHub/AN597_Replication_Assignment/img/WTA_Welfare.png)
+
+
+
+##### Let's Get Replicating!
+
+For this assignment, I will replicate **1)** finding the average tourist dissatisfaction score (DS) across all of the WTA types, **2)** an ANOVA to see if tourist dissatisfaction scores differed across the various subject taxa **3)** the Tukey Post Hoc to see which taxa differed in their dissatisfaction scores and **4)** Figure 3, which shows tourist dissatisfaction scores from TripAdvisor reviews (measured as the percentage of all positive and negative reviews that were negative).
 
 ### Replication 1
 
 Finding the average tourist dissatisfaction score (DS) across the WTA types
 ```{r}
-DS_mean<- mean(WTA_reviews$Percentage, na.rm = T) #The "Percentage" column in the dataset is the tourist dissatisfaction scores measured as the percentage of all reviews— discounting ‘average’ reviews— accounted for by negative reviews (i.e. 100 x (negatives /(positives + negatives))), where a low percentage indicates that few tourists had a negative perception of the attraction
+DS_mean<- mean(WTA_reviews$Percentage, na.rm = T) #The "Percentage" column in the dataset is the tourist dissatisfaction scores measured as the percentage of all reviews (discounting ‘average’ reviews) accounted for by negative reviews (i.e. 100 x (negatives /(positives + negatives))), where a low percentage indicates that few tourists had a negative perception of the attraction
 DS_mean
 
 DS_SD<- sd(WTA_reviews$Percentage, na.rm = T)
@@ -71,16 +91,16 @@ Running the Tukey Post Hoc Test to see which taxa differed significantly in thei
 posthoc<- TukeyHSD(Anova, "Taxa", conf.level = 0.95)
 head(posthoc)
 ```
-*Report from Results Section*: "Tukey post-hoc tests for effects of subject taxon revealed that dolphins had significantly lower mean tourist dissatisfaction scores than crocodiles and elephants (T = 5.090, p < 0.001; T = 4.1062, p < 0.05, respectively) and that sharks had lower scores than crocodiles (T = 5.887, p < 0.001), all other comparisons being non-sig- nificant (T < 3.2, p > 0.05 in all cases; c.f. Fig 3). 
+**Report from Results Section**: "Tukey post-hoc tests for effects of subject taxon revealed that dolphins had significantly lower mean tourist dissatisfaction scores than crocodiles and elephants (T = 5.090, p < 0.001; T = 4.1062, p < 0.05, respectively) and that sharks had lower scores than crocodiles (T = 5.887, p < 0.001), all other comparisons being non-significant (T < 3.2, p > 0.05 in all cases; c.f. Fig 3). 
 
-I selected out the relevant comparisons and put them into a table for easier view: 
+I pulled out the relevant taxa comparisons and put them into a table for easier view: 
 ```{r}
-pairs<- c("Dolphin-Crocodile", "Elephant-Dolphin", "Shark-Crocodile")
-diff<- c(-21.473,8.808,-23.892)
+pairs<- c("Dolphin-Crocodile", "Elephant-Dolphin", "Shark-Crocodile") #the three pairs they reported as significant in their results
+diff<- c(-21.473,8.808,-23.892) #copied these values from the posthoc results
 lwr<- c(-34.306,1.146,-40.162)
 upr<- c(-8.639,16.470,-7.622)
 p_adj<- c(0.0000087,0.0106121,0.0001825)
-posthoc_tab<- data.frame(pairs=pairs, diff=diff, lwr=lwr, upr=upr, p_adj=p_adj)
+posthoc_tab<- data.frame(pairs=pairs, diff=diff, lwr=lwr, upr=upr, p_adj=p_adj) #creating my table
 posthoc_tab
 ```
 
@@ -88,14 +108,15 @@ posthoc_tab
 
 ### Replication 4
 
-Re-creating Figure 3. 
+Re-creating Figure 3 
 ```{r}
 WTA_reviews$Type <- as.character(WTA_reviews$Type) #This is turning the "Type" category into characters rather than factors
+str(WTA_reviews)
 
 q<- qplot(Type,Percentage, data=WTA_reviews, geom="boxplot", xlab= "WTA Type", ylab = "Tourist Dissatisfaction Score (% negative reviews)") 
 q<- q + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) #putting the x labels on an angle
 q<- q + geom_boxplot(outlier.shape = 8) #changing the shape of the outlier points to asterisks
-q<- q + annotate("text", x = 1, y = 10, label = "-1 -3", size=3) #I'm using annotate() to manually add in the conservation and welfare scores onto the plot, not sure if this is the most efficient way since I have to do it for every single WTA type
+q<- q + annotate("text", x = 1, y = 10, label = "-1 -3", size=3) #I'm using annotate() to manually add in the conservation and welfare scores onto the plot, probably not the most efficient way since I have to do it for every single WTA type alone the x-axis
 q<- q + annotate("text", x = 2, y = 7, label = "+1 +2", size=3)
 q<- q + annotate("text", x = 3, y = 25, label = "-1 -3", size=3)
 q<- q + annotate("text", x = 4, y = 70, label = "-2 -3", size=3)
@@ -113,19 +134,20 @@ q<- q + annotate("text", x = 15, y = 48, label = "+1 -3", size=3)
 q
 ```
 
-Figure 3. **Tourist dissatisfaction scores from TripAdvisor reviews (measured as the percentage of all positive and negative reviews that were negative)**. Bars represent the median, boxes the interquartile range, and asterisks outlying points. Numbers above each column, for reference, show the independently awarded conservation and welfare scores, respectively, for each attraction. “C” and “W” denote captive and wild dolphin interactions.
-
-**Image from paper**
-```{r}
-#![Figure from Paper.](/img/WTA_Paper_Fig3.png)
+Figure 3. **Tourist dissatisfaction scores from TripAdvisor reviews (measured as the percentage of all positive and negative reviews that were negative)**. Bars represent the median, boxes the interquartile range, and asterisks outlying points. Numbers above each column, for reference, show the independently awarded conservation and welfare scores, respectively, for each attraction.
 
 
-#<img src="img/WTA_Paper_Fig3.filetype" width="200px"/>
-```
-
-###### <img src= "/img/WTA_Paper_Fig3.png." width="200px"/>
 
 
-```{r pressure, echo=FALSE, fig.cap="Figure 3", out.width = '100%'}
-knitr::include_graphics('/langley/AN597_Replication_Assignment/img/WTA_Paper_Fig3.png')
-```
+
+#### **Image from Published Paper**
+
+![](/Users/lauraangley/Documents/GitHub/AN597_Replication_Assignment/img/WTA_Paper_Fig3.png)
+
+### Conclusion 
+
+  This paper addresses the conservation and welfare impacts of a variety of non-consumptive, non-zoo wildlife tourist attractions located around the world. Overall, they concluded from a subset of 24 attractions that the majority of WTAs have negative impacts on the subject taxaon's conservation status as well as negative impacts on their welfare. They found an inverse relationship between mean tourist dissatisfaction score and the welfare scores. However, they concluded that the majority of tourists will not recognize and acknowledge poor animal welfare when visiting these WTAs (80% of tourists).
+  
+  These authors recommend an urgent need for WTA accreditation or certification processes, as well as periodic inspections, to enhance regulations globally. They also recommend improved tourist education through travel guides and online consumer reviews on platforms such as TripAdvisor. Therefore, tourists against institutions with negative welfare and conservation impacts will be properly informed prior to visiting.
+
+
